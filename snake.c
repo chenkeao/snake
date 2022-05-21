@@ -36,18 +36,10 @@ int main(int argc, char const *argv[])
     while ((status = gameRefresh(&game, &snake)) == 0)
         ;
 
-    if (status == -1)
-    {
-        gameOver(&game, GAME_OVER);
-    }
-    else if (status > 0)
-    {
-        gameOver(&game, GAME_OVER);
-    }
+    gameOver(&game, status == -1 ? GAME_OVER : GAME_WIN);
 
     gameDestroy(&game);
     snakeDestroy(&snake);
-    getch();
     endwin();
     return 0;
 }
@@ -126,10 +118,15 @@ int gameRefresh(GamePtr game, SnakePtr snake)
         return -1;
         //情况三：吃到食物, res: 食物的奖励
     default:
+        static char s[LOG_LENGTH];
+        memset(s, 0, LOG_LENGTH);
+        sprintf(s, "Grade:  +%d", food.reward);
+        logPrint(game, s);
         game->exsitFood = false;
         snakeGrow(snake);
         snakeDraw(game, snake);
         game->grade += food.reward;
+        gradeDraw(game);
         if (game->grade >= MAX_GRADE)
         {
             return game->grade;
@@ -275,6 +272,8 @@ void welcome(GamePtr game)
     mvwprintw(game->gameWin, lineIndex++, (GAME_WIN_WIDTH - strlen(SHOWDIFF)) / 2, SHOWDIFF, game->difficulty);
     mvwprintw(game->gameWin, lineIndex++, (GAME_WIN_WIDTH - strlen(CONTINUE)) / 2, CONTINUE);
 
+    mvwprintw(game->gameWin, GAME_WIN_HEIGHT - 1, 30, GAME_DIFF, game->difficulty);
+
     wrefresh(game->gameWin);
     getch();
 
@@ -305,12 +304,14 @@ void gameInit(Game *game)
     game->exsitFood = 0;
     box(game->gameWin, 0, 0);
     mvwprintw(game->gameWin, 0, (GAME_WIN_WIDTH - strlen(GAME_TITLE)) / 2, GAME_TITLE);
-    mvwprintw(game->gameWin, GAME_WIN_HEIGHT - 1, 2, GAME_GRADE, game->grade);
+    mvwprintw(game->gameWin, GAME_WIN_HEIGHT - 1, 2, GAME_GRADE, game->grade, MAX_GRADE);
     mvwprintw(game->gameWin, GAME_WIN_HEIGHT - 1, 30, GAME_DIFF, game->difficulty);
 
     game->logWin = newwin(LOG_WIN_HEIGHT, LOG_WIN_WIDTH, GAME_WIN_HEIGHT + 1, 3);
     box(game->logWin, 0, 0);
     mvwprintw(game->logWin, 0, (LOG_WIN_WIDTH - strlen(LOG_TITLE)) / 2, LOG_TITLE);
+
+    logPrint(game, "Game begin");
 
     wrefresh(game->gameWin);
     wrefresh(game->logWin);
@@ -379,8 +380,12 @@ void gameOver(GamePtr game, char *msg)
 {
     clearGameWin(game);
     mvwprintw(game->gameWin, (int)(GAME_WIN_HEIGHT / 2), GAME_WIN_WIDTH / 2 - strlen(msg) / 2, msg, game->grade);
-    mvwprintw(game->gameWin, (int)(GAME_WIN_HEIGHT / 2 + 1), 20, "Press any key to quit...");
+    mvwprintw(game->gameWin, (int)(GAME_WIN_HEIGHT / 2 + 1), 30, "Press [q] to quit...");
+    logPrint(game, "Game Over");
+    char c = -1;
     wrefresh(game->gameWin);
+    while ((c = getch()) != 'q')
+        ;
 }
 
 /**
@@ -407,6 +412,17 @@ void snakeDraw(Game *game, SnakePtr snake)
     tailX = snake->head->next->x;
     tailY = snake->head->next->y;
     wrefresh(game->gameWin);
+}
+
+/**
+ * @brief 更新成绩
+ *
+ * @param game
+ */
+void gradeDraw(GamePtr game)
+{
+    mvwprintw(game->gameWin, GAME_WIN_HEIGHT - 1, 2, GAME_GRADE, game->grade, MAX_GRADE);
+    mvwprintw(game->gameWin, GAME_WIN_HEIGHT - 1, 30, GAME_DIFF, game->difficulty);
 }
 
 /**
@@ -528,4 +544,19 @@ int getRandom(int min, int max)
     int num;
     num = (rand() % (max - min + 1)) + min;
     return num;
+}
+
+char logs[LOG_COUNT][LOG_LENGTH];
+
+void logPrint(GamePtr game, char *s)
+{
+    static int cur = 0;
+    strcpy(logs[cur], s);
+    for (int i = 0; i < LOG_COUNT; i++)
+    {
+        int j = (cur - i + LOG_COUNT) % LOG_COUNT;
+        mvwprintw(game->logWin, i + 1, 2, logs[j]);
+        wrefresh(game->logWin);
+    }
+    cur = (cur + LOG_COUNT + 1) % LOG_COUNT;
 }

@@ -6,24 +6,24 @@
 #include <sys/time.h>
 
 // height of the game window
-#define GAME_WIN_HEIGHT 15
+#define GAME_WIN_HEIGHT 18
 
 // width of the game window
-#define GAME_WIN_WIDTH 60
+#define GAME_WIN_WIDTH 80
 
 // width of the log window
-#define LOG_WIN_HEIGHT 7
+#define LOG_WIN_HEIGHT 10
 
 // width of the log window
-#define LOG_WIN_WIDTH 60
+#define LOG_WIN_WIDTH 80
 
 // descriptor, used for select function
 #define STDIN 0
 
-#define MAX_GRADE 50
+#define MAX_GRADE 100
 
 #define GAME_TITLE " Snake Game "
-#define GAME_GRADE " Grade: %d "
+#define GAME_GRADE " Grade: %d Max: %d"
 #define GAME_DIFF " Diff: %d "
 #define LOG_TITLE " Log "
 #define PLAY_AGAIN "Play Again?"
@@ -38,6 +38,10 @@
 #define INFO1 "\'*\': 1 score"
 #define INFO2 "\'@\': 3 score"
 #define INFO3 "\'%\': 5 score"
+
+#define LOG_LENGTH 15
+#define LOG_COUNT (LOG_WIN_HEIGHT - 2)
+
 // direction of every snake's node
 enum DIRE
 {
@@ -137,6 +141,8 @@ void lineClean(GamePtr game, int lineIndex);
 
 void foodDraw(GamePtr game, FoodPtr food);
 
+void gradeDraw(GamePtr game);
+
 void foodInit(FoodPtr food, SnakePtr snake);
 
 void gameDestroy(GamePtr game);
@@ -155,3 +161,5 @@ void clearGameWin(GamePtr game);
  * @return int
  */
 int getRandom(int min, int max);
+
+void logPrint(GamePtr game, char *s);
